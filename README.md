@@ -8,13 +8,12 @@ This Terraform configuration provides a cost-effective GKE cluster optimized for
 - Spot/Preemptible VM instances for additional cost savings
 - Node taints to ensure Gemma 3 pods are properly scheduled
 - Auto-scaling node pool to adjust to demand
-- Automated deployment script for Gemma 3
+- Fully automated deployment of Gemma 3 using Terraform
 
 ## Prerequisites
 
 - Google Cloud SDK installed and configured
 - Terraform v1.0+ installed
-- kubectl installed
 - Access to a Google Cloud Project with billing enabled
 - Required APIs enabled:
   - compute.googleapis.com
@@ -30,22 +29,27 @@ gcloud auth application-default login
 gcloud config set project YOUR_PROJECT_ID
 ```
 
-2. Clone this repository:
+2. **Clone this repository**:
 
 ```bash
 git clone https://github.com/idvoretskyi/terraform-gke-with-gemma3.git
 cd terraform-gke-with-gemma3/gemma3
 ```
 
-3. Create a `terraform.tfvars` file based on the example:
+3. **Create a terraform.tfvars file**:
 
 ```bash
 cp terraform.tfvars.example terraform.tfvars
 ```
 
-4. Edit `terraform.tfvars` to customize your deployment (region, zone, etc.)
+4. **Edit terraform.tfvars** to customize your deployment:
 
-5. Initialize and apply the Terraform configuration:
+```bash
+# Edit with your preferred text editor
+vim terraform.tfvars
+```
+
+5. **Initialize and apply the Terraform configuration**:
 
 ```bash
 terraform init
@@ -53,16 +57,17 @@ terraform plan
 terraform apply
 ```
 
-6. Configure kubectl to connect to your new cluster:
+6. **Configure kubectl** to connect to your new cluster:
 
 ```bash
 $(terraform output -raw kubectl_configure_command)
 ```
 
-7. Deploy Gemma 3 to your cluster:
+7. **Access Gemma 3** deployed to your cluster:
 
 ```bash
-python3 gemma3.py
+# Get Gemma 3 external IP
+$(terraform output -raw gemma3_get_ip_command)
 ```
 
 ## Advanced Configuration
@@ -75,10 +80,20 @@ For advanced scenarios, the following configuration options are available:
 
 Refer to `variables.tf` for all available configuration options.
 
-## Accessing Gemma 3
+## Customizing the Gemma 3 Deployment
 
-After running the deployment script, Gemma 3 will be accessible via a LoadBalancer service.
-The script will output the external IP address when available.
+You can customize the Gemma 3 deployment by adjusting these variables in your `terraform.tfvars` file:
+
+```terraform
+# Gemma 3 Configuration
+k8s_namespace        = "gemma3"
+gemma3_replicas      = 1
+gemma3_image         = "ghcr.io/google-deepmind/gemma:latest"
+gemma3_cpu_limit     = "4"
+gemma3_memory_limit  = "16Gi"
+gemma3_cpu_request   = "2"
+gemma3_memory_request = "8Gi"
+```
 
 ## Cleaning Up
 
@@ -90,8 +105,7 @@ terraform destroy
 
 ## Notes
 
-- This configuration uses your default GCP project as configured in the gcloud CLI
+- This configuration uses your specified GCP project
 - Spot/Preemptible VMs can be terminated at any time. Consider using a managed instance group for more resilience.
 - ARM compatibility: Ensure that the Gemma 3 image is built for the ARM architecture.
 - This configuration uses COS_CONTAINERD as the node image type, which is optimized for running containers.
-# terraform-gke-with-gemma3

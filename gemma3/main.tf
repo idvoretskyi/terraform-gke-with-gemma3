@@ -21,6 +21,10 @@ provider "google" {
   zone    = var.zone
 }
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Networking Resources
+# ---------------------------------------------------------------------------------------------------------------------
+
 # VPC Network for GKE
 resource "google_compute_network" "vpc" {
   project                 = var.project_id
@@ -48,7 +52,10 @@ resource "google_compute_subnetwork" "subnet" {
   }
 }
 
-# GKE Cluster 
+# ---------------------------------------------------------------------------------------------------------------------
+# GKE Cluster
+# ---------------------------------------------------------------------------------------------------------------------
+
 resource "google_container_cluster" "gke_cluster" {
   project            = var.project_id
   name               = var.cluster_name
@@ -56,23 +63,22 @@ resource "google_container_cluster" "gke_cluster" {
   remove_default_node_pool = true
   initial_node_count = 1
   
-  # Use the VPC and subnet created above
+  # Network configuration
   network    = google_compute_network.vpc.name
   subnetwork = google_compute_subnetwork.subnet.name
-
-  # Enable VPC-native cluster (using alias IPs)
   networking_mode = "VPC_NATIVE"
+  
   ip_allocation_policy {
     cluster_secondary_range_name  = "pod-range"
     services_secondary_range_name = "service-range"
   }
 
-  # Release channel for automatic upgrades
+  # Release channel configuration
   release_channel {
     channel = var.release_channel
   }
 
-  # Private cluster settings if desired
+  # Private cluster configuration (optional)
   dynamic "private_cluster_config" {
     for_each = var.private_cluster ? [1] : []
     content {
@@ -83,20 +89,22 @@ resource "google_container_cluster" "gke_cluster" {
   }
 }
 
-# Node pool for Gemma 3 - using ARM processors for cost efficiency
+# ---------------------------------------------------------------------------------------------------------------------
+# Node Pool for Gemma 3
+# ---------------------------------------------------------------------------------------------------------------------
+
 resource "google_container_node_pool" "gemma3_node_pool" {
   project    = var.project_id
   name       = "${var.cluster_name}-node-pool"
   location   = var.zone
   cluster    = google_container_cluster.gke_cluster.name
   
-  # Autoscaling for cost optimization
+  # Auto-scaling configuration
   autoscaling {
     min_node_count = var.min_node_count
     max_node_count = var.max_node_count
   }
   
-  # Initial size of node pool
   initial_node_count = var.initial_node_count
 
   # Node management settings
@@ -107,38 +115,30 @@ resource "google_container_node_pool" "gemma3_node_pool" {
 
   # Node configuration
   node_config {
-    # Use preemptible VMs for cost savings
-    spot          = var.use_spot_vms    # spot VMs (newer than preemptible)
-    preemptible   = !var.use_spot_vms   # preemptible if not using spot
+    # Cost optimization settings
+    spot          = var.use_spot_vms
+    preemptible   = !var.use_spot_vms
+    machine_type  = var.machine_type
+    disk_size_gb  = var.disk_size_gb
+    disk_type     = var.disk_type
+    local_ssd_count = var.local_ssd_count
+    image_type    = "COS_CONTAINERD"
     
-    # ARM-based machine type for cost efficiency
-    machine_type = var.machine_type
-    
-    # OAuth scopes
+    # Access scopes
     oauth_scopes = [
       "https://www.googleapis.com/auth/cloud-platform",
     ]
     
-    # Labels for node selection in k8s
+    # Kubernetes node configuration
     labels = {
       "model" = "gemma3"
     }
     
-    # Taints to ensure only Gemma 3 pods are scheduled on these nodes
+    # Ensure only Gemma 3 pods are scheduled on these nodes
     taint {
       key    = "dedicated"
       value  = "gemma3"
       effect = "NO_SCHEDULE"
     }
-    
-    # Using COS_CONTAINERD for optimized container runtime
-    image_type = "COS_CONTAINERD"
-    
-    # Disk size for model data
-    disk_size_gb = var.disk_size_gb
-    disk_type    = var.disk_type
-    
-    # Local SSD if needed for model caching
-    local_ssd_count = var.local_ssd_count
   }
 }

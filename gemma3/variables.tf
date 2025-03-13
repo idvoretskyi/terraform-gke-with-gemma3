@@ -1,3 +1,16 @@
+# ---------------------------------------------------------------------------------------------------------------------
+# Required Variables
+# ---------------------------------------------------------------------------------------------------------------------
+
+variable "project_id" {
+  type        = string
+  description = "Google Cloud Project ID"
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Location Variables
+# ---------------------------------------------------------------------------------------------------------------------
+
 variable "region" {
   type        = string
   description = "The region to deploy the GKE cluster"
@@ -10,11 +23,29 @@ variable "zone" {
   default     = "us-central1-a"
 }
 
+# ---------------------------------------------------------------------------------------------------------------------
+# Cluster Configuration
+# ---------------------------------------------------------------------------------------------------------------------
+
 variable "cluster_name" {
   type        = string
   description = "The name of the GKE cluster"
   default     = "gemma3-cluster"
 }
+
+variable "release_channel" {
+  type        = string
+  description = "The release channel for the GKE cluster"
+  default     = "RAPID"
+  validation {
+    condition     = contains(["RAPID", "REGULAR", "STABLE"], var.release_channel)
+    error_message = "The release_channel must be one of RAPID, REGULAR, or STABLE."
+  }
+}
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Network Configuration
+# ---------------------------------------------------------------------------------------------------------------------
 
 variable "subnet_cidr" {
   type        = string
@@ -45,6 +76,10 @@ variable "master_ipv4_cidr" {
   description = "The CIDR range for the master network"
   default     = "172.16.0.0/28"
 }
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Node Pool Configuration
+# ---------------------------------------------------------------------------------------------------------------------
 
 variable "min_node_count" {
   type        = number
@@ -100,12 +135,48 @@ variable "enable_gvisor" {
   default     = false
 }
 
-variable "release_channel" {
+# ---------------------------------------------------------------------------------------------------------------------
+# Kubernetes Deployment Configuration
+# ---------------------------------------------------------------------------------------------------------------------
+
+variable "k8s_namespace" {
   type        = string
-  description = "The release channel for the GKE cluster"
-  default     = "RAPID"
-  validation {
-    condition     = contains(["RAPID", "REGULAR", "STABLE"], var.release_channel)
-    error_message = "The release_channel must be one of RAPID, REGULAR, or STABLE."
-  }
+  description = "Kubernetes namespace for Gemma 3 deployment"
+  default     = "gemma3"
+}
+
+variable "gemma3_replicas" {
+  type        = number
+  description = "Number of Gemma 3 replicas to deploy"
+  default     = 1
+}
+
+variable "gemma3_image" {
+  type        = string
+  description = "Container image for Gemma 3"
+  default     = "ghcr.io/google-deepmind/gemma:latest"
+}
+
+variable "gemma3_cpu_limit" {
+  type        = string
+  description = "CPU limit for Gemma 3 container"
+  default     = "4"
+}
+
+variable "gemma3_memory_limit" {
+  type        = string
+  description = "Memory limit for Gemma 3 container"
+  default     = "16Gi"
+}
+
+variable "gemma3_cpu_request" {
+  type        = string
+  description = "CPU request for Gemma 3 container"
+  default     = "2"
+}
+
+variable "gemma3_memory_request" {
+  type        = string
+  description = "Memory request for Gemma 3 container"
+  default     = "8Gi"
 }
