@@ -19,6 +19,32 @@ This configuration:
 4. Automatically deploys Gemma 3 as a Kubernetes Deployment with a LoadBalancer Service
 5. Sets up proper node selectors and taints to ensure Gemma 3 runs on the correct nodes
 
+```mermaid
+flowchart TD
+    subgraph "Google Cloud Platform"
+        VPC["VPC Network"] --> Subnet["Subnet with Secondary Ranges"]
+        Subnet --> GKE["GKE Cluster"]
+        GKE --> NodePool["ARM-based Node Pool\n(Spot VMs)"]
+        
+        subgraph "Kubernetes"
+            Namespace["Namespace: gemma3"]
+            Deploy["Deployment: Gemma3"]
+            Service["Service: LoadBalancer"]
+            Pod["Gemma3 Pod"]
+
+            Namespace --> Deploy
+            Deploy --> Pod
+            Pod --> |exposes| Service
+            Service --> |external IP| Internet["Internet"]
+        end
+
+        NodePool --> Namespace
+    end
+
+    User["User/Client"] --> Internet
+    Terraform["Terraform\nConfiguration"] --> |creates| VPC
+```
+
 ## Prerequisites
 
 - Google Cloud SDK installed and configured
