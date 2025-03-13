@@ -1,0 +1,32 @@
+# PROJECT ID IS REQUIRED - set this to your Google Cloud Project ID
+project_id = "your-gcp-project-id"
+
+# Region and zone configuration
+region = "us-central1"
+zone   = "us-central1-a"
+
+# Cluster configuration
+cluster_name   = "gemma3-cluster"
+release_channel = "RAPID"  # Using RAPID channel for early access to new features
+
+# Network configuration
+subnet_cidr   = "10.0.0.0/24"
+pod_cidr      = "10.1.0.0/16"
+service_cidr  = "10.2.0.0/16"
+private_cluster = false
+# master_ipv4_cidr = "172.16.0.0/28" # Uncomment if private_cluster = true
+
+# Node pool configuration 
+machine_type = "t2a.medium" # ARM-based machine type
+use_spot_vms = true
+disk_size_gb = 100
+disk_type    = "pd-standard"
+
+# Autoscaling configuration
+min_node_count = 1
+max_node_count = 3
+initial_node_count = 1
+
+# Advanced configuration
+local_ssd_count = 0
+enable_gvisor = false
